@@ -19,4 +19,6 @@ data class DetectionFrame(
     val imageHeight: Int,
     val isFrontCamera: Boolean,
     val boxes: List<DetBox>,
+    /** Person/object boxes (drawn in a second colour); empty if person detection is off. */
+    val personBoxes: List<DetBox> = emptyList(),
 )

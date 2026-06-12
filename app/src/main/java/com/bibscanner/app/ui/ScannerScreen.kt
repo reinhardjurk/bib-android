@@ -69,9 +69,20 @@ fun ScannerScreen(
     settings: AppSettings,
     onOpenSettings: () -> Unit,
     onOpenResults: () -> Unit,
+    onOpenVideo: () -> Unit,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Pick a recorded video to run the same pipeline over.
+    val videoPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            vm.pendingVideoUri = uri
+            onOpenVideo()
+        }
+    }
 
     var hasCamPermission by remember {
         mutableStateOf(
@@ -116,6 +127,7 @@ fun ScannerScreen(
     val status by vm.status.collectAsStateWithLifecycle()
     val results by vm.results.collectAsStateWithLifecycle()
     val overlay by vm.overlay.collectAsStateWithLifecycle()
+    val offset by vm.calibrationOffset.collectAsStateWithLifecycle()
 
     val labelPaint = remember {
         android.graphics.Paint().apply {
@@ -140,9 +152,10 @@ fun ScannerScreen(
             it.stop()
             vm.currentRecording = null
         }
+        // Unbind first so no new frames are analysed, then flush pending tracks.
+        provider.unbindAll()
         activeAnalyzer?.flush()
         activeAnalyzer = null
-        provider.unbindAll()
         vm.overlay.value = null
 
         if (!isRunning || !hasCamPermission) return@LaunchedEffect
@@ -156,14 +169,21 @@ fun ScannerScreen(
             onStatus = { vm.setStatus(it) },
             onDetections = { vm.overlay.value = it },
         ) { confirmed ->
-            // Runs on the ML Kit callback thread. Persist + notify.
-            val path = confirmed.crop?.let { ImageUtils.saveCrop(context, confirmed.bib, it) }
+            // Runs on the analysis thread. Persist + notify.
+            val path = confirmed.crop?.let { crop ->
+                if (confirmed.isNoNumber) {
+                    ImageUtils.saveCropNamed(context, "nonumber_${(confirmed.elapsedSeconds * 1000).toLong()}", crop)
+                } else {
+                    ImageUtils.saveCrop(context, confirmed.bib, crop)
+                }
+            }
             vm.addResult(
                 BibResult(
                     bib = confirmed.bib,
                     elapsedSeconds = confirmed.elapsedSeconds,
                     timeText = confirmed.timeText,
                     imagePath = path,
+                    isNoNumber = confirmed.isNoNumber,
                 )
             )
             callbackClient.fire(settings, confirmed.bib, confirmed.elapsedSeconds)
@@ -245,6 +265,23 @@ fun ScannerScreen(
                         val dx = (size.width - frame.imageWidth * scale) / 2f
                         val dy = (size.height - frame.imageHeight * scale) / 2f
                         val stroke = 3.dp.toPx()
+                        // People (yellow) drawn under the number boxes.
+                        for (b in frame.personBoxes) {
+                            var l = b.left * scale + dx
+                            var r = b.right * scale + dx
+                            val t = b.top * scale + dy
+                            val bottom = b.bottom * scale + dy
+                            if (frame.isFrontCamera) {
+                                val ml = size.width - r; val mr = size.width - l
+                                l = ml; r = mr
+                            }
+                            drawRect(
+                                color = Color.Yellow,
+                                topLeft = Offset(l, t),
+                                size = Size(r - l, bottom - t),
+                                style = Stroke(width = 2.dp.toPx())
+                            )
+                        }
                         for (b in frame.boxes) {
                             var l = b.left * scale + dx
                             var r = b.right * scale + dx
@@ -296,7 +333,10 @@ fun ScannerScreen(
                 style = MaterialTheme.typography.titleMedium
             )
             results.takeLast(3).reversed().forEach { r ->
-                Text("• ${r.bib}   ${r.timeText}", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "• ${r.bib}   ${ImageUtils.correctedHms(r.elapsedSeconds, offset)}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
 
             Row(
@@ -318,6 +358,16 @@ fun ScannerScreen(
                 OutlinedButton(onClick = onOpenSettings, modifier = Modifier.weight(1f)) {
                     Text("Settings")
                 }
+            }
+
+            OutlinedButton(
+                onClick = { videoPicker.launch("video/*") },
+                enabled = !isRunning,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+            ) {
+                Text("Process recorded video…")
             }
         }
     }

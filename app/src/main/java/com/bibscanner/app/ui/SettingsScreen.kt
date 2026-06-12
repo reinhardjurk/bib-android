@@ -44,6 +44,8 @@ fun SettingsScreen(
     var maxDigits by remember { mutableStateOf(current.maxBibDigits.toString()) }
     var recordBackup by remember { mutableStateOf(current.recordBackup) }
     var useFrontCamera by remember { mutableStateOf(current.useFrontCamera) }
+    var videoSampleMs by remember { mutableStateOf(current.videoSampleMs.toString()) }
+    var reportNoNumber by remember { mutableStateOf(current.reportNoNumber) }
 
     Column(
         modifier = Modifier
@@ -85,11 +87,16 @@ fun SettingsScreen(
         NumberField("Patience (seconds before confirming)", patience) { patience = it }
         NumberField("Min bib digits", minDigits) { minDigits = it }
         NumberField("Max bib digits", maxDigits) { maxDigits = it }
+        SwitchRow("Report people with no number (\"nonumber\")", reportNoNumber) { reportNoNumber = it }
 
         HorizontalDivider()
         SectionTitle("Capture")
         SwitchRow("Record .mp4 backup", recordBackup) { recordBackup = it }
         SwitchRow("Use front camera", useFrontCamera) { useFrontCamera = it }
+
+        HorizontalDivider()
+        SectionTitle("Recorded video")
+        NumberField("Frame sample interval (ms)", videoSampleMs) { videoSampleMs = it }
 
         HorizontalDivider()
         Row(
@@ -110,6 +117,8 @@ fun SettingsScreen(
                             maxBibDigits = maxDigits.toIntOrNull()?.coerceAtLeast(1) ?: 5,
                             recordBackup = recordBackup,
                             useFrontCamera = useFrontCamera,
+                            videoSampleMs = videoSampleMs.toIntOrNull()?.coerceAtLeast(20) ?: 150,
+                            reportNoNumber = reportNoNumber,
                         )
                     )
                     onBack()

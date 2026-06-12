@@ -64,6 +64,10 @@ dependencies {
 
     // ML Kit on-device text recognition (replaces EasyOCR)
     implementation("com.google.mlkit:text-recognition:16.0.1")
+    // ML Kit object detection + tracking (for "person but no number")
+    implementation("com.google.mlkit:object-detection:17.0.2")
+    // Tasks.await() for synchronous frame-by-frame processing
+    implementation("com.google.android.gms:play-services-tasks:18.2.0")
 
     // Settings persistence
     implementation("androidx.datastore:datastore-preferences:1.1.1")

@@ -24,6 +24,7 @@ import com.bibscanner.app.ui.ResultsScreen
 import com.bibscanner.app.ui.ScannerScreen
 import com.bibscanner.app.ui.ScannerViewModel
 import com.bibscanner.app.ui.SettingsScreen
+import com.bibscanner.app.ui.VideoScreen
 import com.bibscanner.app.ui.theme.BibScannerTheme
 import kotlinx.coroutines.launch
 
@@ -65,6 +66,14 @@ private fun AppRoot() {
                     settings = settings,
                     onOpenSettings = { nav.navigate("settings") },
                     onOpenResults = { nav.navigate("results") },
+                    onOpenVideo = { nav.navigate("video") },
+                )
+            }
+            composable("video") {
+                VideoScreen(
+                    vm = scannerVm,
+                    settings = settings,
+                    onBack = { nav.popBackStack() },
                 )
             }
             composable("settings") {
@@ -77,6 +86,7 @@ private fun AppRoot() {
             composable("results") {
                 ResultsScreen(
                     vm = scannerVm,
+                    settings = settings,
                     onBack = { nav.popBackStack() },
                 )
             }

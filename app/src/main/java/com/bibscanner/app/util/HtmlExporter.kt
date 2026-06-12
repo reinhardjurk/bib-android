@@ -7,7 +7,7 @@ import java.io.File
 /** Writes a race_results.html table matching the Python output layout. */
 object HtmlExporter {
 
-    fun export(context: Context, results: List<BibResult>): String {
+    fun export(context: Context, results: List<BibResult>, offsetSeconds: Double = 0.0): String {
         val sb = StringBuilder()
         sb.append(
             """
@@ -32,8 +32,9 @@ object HtmlExporter {
         )
         for (r in results) {
             val img = r.imagePath?.let { "<img src=\"file://$it\" alt=\"Bib ${r.bib}\">" } ?: "—"
+            val time = ImageUtils.correctedHms(r.elapsedSeconds, offsetSeconds)
             sb.append(
-                "<tr><td><strong>${r.bib}</strong></td><td>${r.timeText}</td><td>$img</td></tr>\n"
+                "<tr><td><strong>${r.bib}</strong></td><td>$time</td><td>$img</td></tr>\n"
             )
         }
         sb.append("</table></body></html>")

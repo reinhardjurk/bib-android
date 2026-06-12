@@ -21,7 +21,15 @@ data class AppSettings(
     val minBibDigits: Int = 1,
     val maxBibDigits: Int = 5,
 
+    // Also detect people; emit a "nonumber" entry for a person whose bib was
+    // never readable. Adds an object-detection pass per frame.
+    val reportNoNumber: Boolean = true,
+
     // Capture.
     val recordBackup: Boolean = true,
     val useFrontCamera: Boolean = false,
+
+    // Recorded-video processing: how often to sample a frame (ms). Smaller =
+    // more thorough but slower.
+    val videoSampleMs: Int = 150,
 )

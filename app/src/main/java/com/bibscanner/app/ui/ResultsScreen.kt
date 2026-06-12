@@ -27,17 +27,25 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.bibscanner.app.data.AppSettings
 import com.bibscanner.app.data.BibResult
+import com.bibscanner.app.net.CallbackClient
 import com.bibscanner.app.util.HtmlExporter
+import com.bibscanner.app.util.ImageUtils
 import java.io.File
 
 @Composable
 fun ResultsScreen(
     vm: ScannerViewModel,
+    settings: AppSettings,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
+    val callbackClient = remember { CallbackClient() }
+
     val results by vm.results.collectAsStateWithLifecycle()
+    val offset by vm.calibrationOffset.collectAsStateWithLifecycle()
+    val calibrationLabel by vm.calibrationLabel.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -57,7 +65,7 @@ fun ResultsScreen(
         ) {
             Button(
                 onClick = {
-                    val path = HtmlExporter.export(context, results)
+                    val path = HtmlExporter.export(context, results, offset)
                     Toast.makeText(context, "Saved: $path", Toast.LENGTH_LONG).show()
                 },
                 modifier = Modifier.weight(1f)
@@ -69,19 +77,36 @@ fun ResultsScreen(
             OutlinedButton(onClick = onBack, modifier = Modifier.weight(1f)) { Text("Back") }
         }
 
-        HorizontalDivider()
+        if (results.isNotEmpty()) {
+            CalibrationSection(
+                results = results,
+                calibrationLabel = calibrationLabel,
+                onApply = { bib, secs ->
+                    if (!vm.calibrate(bib, secs)) {
+                        Toast.makeText(context, "Bib $bib not found", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onClear = { vm.clearCalibration() },
+                onResend = {
+                    val off = vm.calibrationOffset.value
+                    results.forEach { callbackClient.fire(settings, it.bib, it.elapsedSeconds + off) }
+                    Toast.makeText(context, "Re-sent ${results.size} corrected", Toast.LENGTH_SHORT).show()
+                },
+            )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        }
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(results) { r -> ResultRow(r) }
+            items(results) { r -> ResultRow(r, offset) }
         }
     }
 }
 
 @Composable
-private fun ResultRow(r: BibResult) {
+private fun ResultRow(r: BibResult, offset: Double) {
     val thumb = remember(r.imagePath) {
         r.imagePath?.let { path ->
             val f = File(path)
@@ -105,10 +130,13 @@ private fun ResultRow(r: BibResult) {
             }
             Column {
                 Text(
-                    "Bib ${r.bib}",
+                    if (r.isNoNumber) "No number" else "Bib ${r.bib}",
                     style = MaterialTheme.typography.titleMedium
                 )
-                Text(r.timeText, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    ImageUtils.correctedHms(r.elapsedSeconds, offset),
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
         }
     }

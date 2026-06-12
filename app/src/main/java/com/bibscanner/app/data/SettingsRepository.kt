@@ -30,6 +30,8 @@ class SettingsRepository(context: Context) {
         val MAX_DIGITS = intPreferencesKey("max_digits")
         val RECORD_BACKUP = booleanPreferencesKey("record_backup")
         val FRONT_CAMERA = booleanPreferencesKey("front_camera")
+        val VIDEO_SAMPLE_MS = intPreferencesKey("video_sample_ms")
+        val REPORT_NO_NUMBER = booleanPreferencesKey("report_no_number")
     }
 
     val settings: Flow<AppSettings> = ds.data.map { p ->
@@ -45,6 +47,8 @@ class SettingsRepository(context: Context) {
             maxBibDigits = p[Keys.MAX_DIGITS] ?: d.maxBibDigits,
             recordBackup = p[Keys.RECORD_BACKUP] ?: d.recordBackup,
             useFrontCamera = p[Keys.FRONT_CAMERA] ?: d.useFrontCamera,
+            videoSampleMs = p[Keys.VIDEO_SAMPLE_MS] ?: d.videoSampleMs,
+            reportNoNumber = p[Keys.REPORT_NO_NUMBER] ?: d.reportNoNumber,
         )
     }
 
@@ -60,6 +64,8 @@ class SettingsRepository(context: Context) {
             p[Keys.MAX_DIGITS] = s.maxBibDigits
             p[Keys.RECORD_BACKUP] = s.recordBackup
             p[Keys.FRONT_CAMERA] = s.useFrontCamera
+            p[Keys.VIDEO_SAMPLE_MS] = s.videoSampleMs
+            p[Keys.REPORT_NO_NUMBER] = s.reportNoNumber
         }
     }
 }

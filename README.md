@@ -23,6 +23,60 @@ The recognition logic is the same idea: a number must be seen at least
 `minConsecutiveDetections` times and then disappear for `patienceSeconds`
 before it is confirmed once and only once.
 
+## Two input modes
+
+- **Live camera** — tap **Start** and point the phone at the course.
+- **Recorded video** — tap **Process recorded video…**, pick a movie from the
+  phone, **drag a box over the area to scan** (e.g. the finish line) on the first
+  frame, and the same pipeline runs over its frames. The screen shows the
+  selected file name, a live thumbnail of the frame currently being scanned
+  (with the detection boxes drawn on it), and a progress bar. Here the elapsed
+  time is the position *within the video* (plus the time offset), so it works
+  like the offline `doit.py`. Confirmed bibs save close-ups, fill the Results
+  list, and fire the webhook exactly as the live mode does.
+
+  The drag-box is a **region of interest** (like `doit.py`'s `selectROI`): only
+  that crop of each frame is sent to ML Kit, so a tighter box means far fewer
+  pixels to analyse and noticeably faster processing. Tap **Full frame** to scan
+  the whole image.
+
+Both modes share one recognition core ([`BibRecognizer`](app/src/main/java/com/bibscanner/app/detect/BibRecognizer.kt));
+the live path feeds it CameraX frames, the video path feeds it frames sampled
+from the file with `MediaMetadataRetriever`.
+
+## People without a readable number ("nonumber")
+
+With **Report people with no number** enabled (Settings, on by default), each
+frame also runs ML Kit **object detection with tracking**. Every tracked person
+is followed; numbers are matched to whichever person box contains them. When a
+person has been tracked long enough but leaves view **without ever** carrying a
+readable bib, the app emits one entry labelled **`nonumber`** — it goes into the
+Results list (shown as "No number"), saves a close-up of that person, and fires
+the webhook with `bib=nonumber` and the elapsed time, exactly like a numbered
+runner. People who *did* show a number are handled by the number path and are
+not double-counted. In the live preview and the video thumbnail, person boxes
+are drawn in **yellow** and number boxes in **green**.
+
+Turn the switch off to skip object detection entirely (slightly faster, numbers
+only). Note: ML Kit's generic object detector isn't person-specific, so at a busy
+course it can occasionally flag a prominent non-runner; the minimum-frames
+threshold (reuses *min consecutive detections*) filters out brief blips.
+
+## Time calibration (one-anchor correction)
+
+After a run finishes (or you cancel it), you can align every time to a single
+known reference. In **Results** (or at the bottom of the video screen) enter one
+**reference bib** and its **true absolute time** (e.g. `1:23:45.6`, `12:30`, or
+plain seconds), then tap **Apply**. The app computes the difference between that
+bib's detected time and the real time, and shifts *every* result by that one
+offset — so a known runner's chip-time fixes the clock for the whole field.
+
+It's non-destructive: each result keeps its raw detected time, the offset is
+applied on top, and **Clear** reverts. Re-applying with a different anchor never
+compounds. **Export HTML** writes the corrected times, and
+**Re-send corrected times to webhook** re-fires the callback for every bib with
+the corrected time (handy when the original calls went out during detection).
+
 > **Why ML Kit instead of YOLO+EasyOCR?** Those Python models don't run natively
 > on Android. ML Kit's on-device text recognition is fast, free, battery-light,
 > and needs no bundled model files. The detection is keyed by the recognised
@@ -74,6 +128,7 @@ Wi-Fi. It accepts GET and POST and logs the bib + time for every call.
 | **Min / Max bib digits**    | Length filter to reject stray numbers                          |
 | **Record .mp4 backup**      | Save a full recording of the session                           |
 | **Use front camera**        | Switch lens                                                    |
+| **Frame sample interval (ms)** | For recorded-video mode: how often to sample a frame. Smaller = more thorough but slower |
 
 The default callback URL uses `10.0.2.2` (the host machine as seen from an
 emulator). On a real phone, set it to your timing server's IP/host.
@@ -110,4 +165,8 @@ script calls.
   count + digit-length filter.
 - The recorded time is the runner's **first** confirmed sighting. Adjust with
   the time offset if you need it tied to a specific line.
+- **Recorded-video mode** decodes frames with `MediaMetadataRetriever` at the
+  sample interval, so it is *not* real-time — a long race video takes a while to
+  grind through. Picking the file uses the system picker, so no storage
+  permission is required. Leaving the video screen cancels an in-progress run.
 ```
