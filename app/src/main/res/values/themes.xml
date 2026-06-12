@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base app theme used before Compose takes over. Compose provides the
+         real Material 3 styling at runtime (see ui/theme/Theme.kt). -->
+    <style name="Theme.BibScanner" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
