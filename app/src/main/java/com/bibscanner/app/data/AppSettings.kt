@@ -21,6 +21,10 @@ data class AppSettings(
     val minBibDigits: Int = 1,
     val maxBibDigits: Int = 5,
 
+    // Confirm a bib as soon as it has been seen [minConsecutiveDetections] times,
+    // instead of waiting for it to leave the frame for [patienceSeconds].
+    val confirmOnThreshold: Boolean = true,
+
     // Also detect people; emit a "nonumber" entry for a person whose bib was
     // never readable. Adds an object-detection pass per frame.
     val reportNoNumber: Boolean = true,

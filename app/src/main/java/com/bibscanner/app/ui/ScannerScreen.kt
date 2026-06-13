@@ -196,7 +196,7 @@ fun ScannerScreen(
             .also { it.setAnalyzer(analysisExecutor, analyzer) }
 
         val preview = Preview.Builder().build().also {
-            it.setSurfaceProvider(previewView.surfaceProvider)
+            it.surfaceProvider = previewView.surfaceProvider
         }
 
         val selector = if (settings.useFrontCamera) {
@@ -233,7 +233,7 @@ fun ScannerScreen(
                 provider.bindToLifecycle(lifecycleOwner, selector, preview, analysis)
                 vm.setStatus("Scanning (no backup)")
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // Some devices can't run preview+analysis+video together; fall back.
             try {
                 provider.unbindAll()

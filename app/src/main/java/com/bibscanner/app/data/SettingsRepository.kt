@@ -32,6 +32,7 @@ class SettingsRepository(context: Context) {
         val FRONT_CAMERA = booleanPreferencesKey("front_camera")
         val VIDEO_SAMPLE_MS = intPreferencesKey("video_sample_ms")
         val REPORT_NO_NUMBER = booleanPreferencesKey("report_no_number")
+        val CONFIRM_ON_THRESHOLD = booleanPreferencesKey("confirm_on_threshold")
     }
 
     val settings: Flow<AppSettings> = ds.data.map { p ->
@@ -49,6 +50,7 @@ class SettingsRepository(context: Context) {
             useFrontCamera = p[Keys.FRONT_CAMERA] ?: d.useFrontCamera,
             videoSampleMs = p[Keys.VIDEO_SAMPLE_MS] ?: d.videoSampleMs,
             reportNoNumber = p[Keys.REPORT_NO_NUMBER] ?: d.reportNoNumber,
+            confirmOnThreshold = p[Keys.CONFIRM_ON_THRESHOLD] ?: d.confirmOnThreshold,
         )
     }
 
@@ -66,6 +68,7 @@ class SettingsRepository(context: Context) {
             p[Keys.FRONT_CAMERA] = s.useFrontCamera
             p[Keys.VIDEO_SAMPLE_MS] = s.videoSampleMs
             p[Keys.REPORT_NO_NUMBER] = s.reportNoNumber
+            p[Keys.CONFIRM_ON_THRESHOLD] = s.confirmOnThreshold
         }
     }
 }

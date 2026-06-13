@@ -64,6 +64,7 @@ class BibRecognizer(
         patienceMillis = (settings.patienceSeconds * 1000).toLong(),
         minDigits = settings.minBibDigits,
         maxDigits = settings.maxBibDigits,
+        confirmOnThreshold = settings.confirmOnThreshold,
     ) { number, firstSeenMs ->
         val elapsed = (firstSeenMs - timeOriginMs) / 1000.0 + settings.timeOffsetSeconds
         val crop = pendingNumberCrops.remove(number)

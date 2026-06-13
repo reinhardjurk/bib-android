@@ -46,6 +46,7 @@ fun SettingsScreen(
     var useFrontCamera by remember { mutableStateOf(current.useFrontCamera) }
     var videoSampleMs by remember { mutableStateOf(current.videoSampleMs.toString()) }
     var reportNoNumber by remember { mutableStateOf(current.reportNoNumber) }
+    var confirmOnThreshold by remember { mutableStateOf(current.confirmOnThreshold) }
 
     Column(
         modifier = Modifier
@@ -85,6 +86,7 @@ fun SettingsScreen(
         NumberField("Time offset (seconds, added to elapsed)", timeOffset) { timeOffset = it }
         NumberField("Min consecutive detections", minConsecutive) { minConsecutive = it }
         NumberField("Patience (seconds before confirming)", patience) { patience = it }
+        SwitchRow("Confirm as soon as seen (don't wait for exit)", confirmOnThreshold) { confirmOnThreshold = it }
         NumberField("Min bib digits", minDigits) { minDigits = it }
         NumberField("Max bib digits", maxDigits) { maxDigits = it }
         SwitchRow("Report people with no number (\"nonumber\")", reportNoNumber) { reportNoNumber = it }
@@ -119,6 +121,7 @@ fun SettingsScreen(
                             useFrontCamera = useFrontCamera,
                             videoSampleMs = videoSampleMs.toIntOrNull()?.coerceAtLeast(20) ?: 150,
                             reportNoNumber = reportNoNumber,
+                            confirmOnThreshold = confirmOnThreshold,
                         )
                     )
                     onBack()

@@ -28,6 +28,7 @@ class VideoProcessor(
     private val settings: AppSettings,
     private val callbackClient: CallbackClient,
     private val roi: RectF,
+    private val calibrationOffset: () -> Double,
     private val onResult: (BibResult) -> Unit,
     private val onProgress: (processedMs: Long, totalMs: Long) -> Unit,
     private val onPreview: (thumbnail: Bitmap, frame: DetectionFrame) -> Unit,
@@ -52,7 +53,8 @@ class VideoProcessor(
                     isNoNumber = confirmed.isNoNumber,
                 )
             )
-            callbackClient.fire(settings, confirmed.bib, confirmed.elapsedSeconds)
+            // Apply the current calibration offset so mid-run corrections take effect.
+            callbackClient.fire(settings, confirmed.bib, confirmed.elapsedSeconds + calibrationOffset())
         }
 
         val retriever = MediaMetadataRetriever()

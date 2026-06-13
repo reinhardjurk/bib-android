@@ -20,8 +20,12 @@ started. Everything is configurable from the **Settings** screen.
 | elapsed time from script start    | elapsed time from **Start** tap                |
 
 The recognition logic is the same idea: a number must be seen at least
-`minConsecutiveDetections` times and then disappear for `patienceSeconds`
-before it is confirmed once and only once.
+`minConsecutiveDetections` times to be confirmed once and only once. By default
+(**Confirm as soon as seen**) it is confirmed the moment it reaches that count;
+turn the setting off to instead wait until it leaves the frame for
+`patienceSeconds` (the finish-line-accurate behaviour, matching the Python
+pipeline). If numbers are only read once as runners flash by, set
+**Min consecutive detections = 1**.
 
 ## Two input modes
 
@@ -76,6 +80,11 @@ applied on top, and **Clear** reverts. Re-applying with a different anchor never
 compounds. **Export HTML** writes the corrected times, and
 **Re-send corrected times to webhook** re-fires the callback for every bib with
 the corrected time (handy when the original calls went out during detection).
+
+The calibration panel is editable **while a video is still being analysed**, not
+only after it finishes. Once an anchor is set, every newly confirmed bib is sent
+to the webhook with the offset already applied, and **Re-send corrected times**
+re-issues the bibs confirmed before the anchor was set.
 
 > **Why ML Kit instead of YOLO+EasyOCR?** Those Python models don't run natively
 > on Android. ML Kit's on-device text recognition is fast, free, battery-light,

@@ -17,6 +17,7 @@ class BibTracker(
     private val patienceMillis: Long,
     private val minDigits: Int,
     private val maxDigits: Int,
+    private val confirmOnThreshold: Boolean,
     private val onConfirmed: (number: String, firstSeenMs: Long) -> Unit,
 ) {
     private class Track(var count: Int, val firstSeenMs: Long, var lastSeenMs: Long)
@@ -35,6 +36,16 @@ class BibTracker(
             } else {
                 t.count++
                 t.lastSeenMs = nowMs
+            }
+            // Confirm immediately once the threshold is reached, rather than
+            // waiting for the number to leave the frame.
+            if (confirmOnThreshold) {
+                val tk = active[raw]!!
+                if (tk.count >= minConsecutive) {
+                    completed.add(raw)
+                    onConfirmed(raw, tk.firstSeenMs)
+                    active.remove(raw)
+                }
             }
         }
         prune(nowMs)

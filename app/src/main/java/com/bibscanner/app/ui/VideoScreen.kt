@@ -117,6 +117,7 @@ fun VideoScreen(
             settings = settings,
             callbackClient = callbackClient,
             roi = vm.videoRoi,
+            calibrationOffset = { vm.calibrationOffset.value },
             onResult = { vm.addResult(it) },
             onProgress = { done, total ->
                 vm.videoProgress.value = if (total > 0) done.toFloat() / total else 0f
@@ -248,7 +249,9 @@ fun VideoScreen(
                     )
                 }
 
-                if (!processing && results.isNotEmpty()) {
+                // Editable during analysis too, so you can anchor and re-issue
+                // corrected bibs without waiting for the run to finish.
+                if (results.isNotEmpty()) {
                     HorizontalDivider()
                     CalibrationSection(
                         results = results,
